@@ -1,0 +1,73 @@
+---
+import Base from "../layouts/Base.astro";
+import { AUTHOR, GITHUB_URL } from "../site";
+
+const title = "Siftdog vs Tavily: search benchmark (September 2026)";
+const description =
+  "A reproducible benchmark of Siftdog, the open-source self-hosted Tavily alternative, against the Tavily API on 45 queries: factual answers, official documentation, latency and cost.";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  headline: title,
+  description,
+  datePublished: "2026-09-25",
+  author: AUTHOR,
+  mainEntityOfPage: "https://siftdog.com/benchmark/",
+  about: { "@id": "https://siftdog.com/#software" },
+};
+---
+<Base title={title} description={description} current="benchmark" jsonLd={jsonLd} ogType="article">
+<header>
+  <h1>Siftdog vs Tavily: search benchmark</h1>
+  <p class="meta">25 September 2026 · Siftdog 0.2.1 · 45 queries</p>
+</header>
+
+<div class="takeaways">
+  <ul>
+    <li><strong>Facts: on par.</strong> Both found 25 of 25 answers in advanced mode.</li>
+    <li><strong>Official docs: Siftdog found them more often,</strong> 9 of 10 vs Tavily's 7 (basic) and 3 (advanced).</li>
+    <li><strong>Speed: similar.</strong> Tavily was faster in basic mode, Siftdog in advanced.</li>
+    <li><strong>Cost: $0 per search,</strong> vs $8–16 per 1,000 on Tavily.</li>
+  </ul>
+</div>
+
+<h2>Results</h2>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th></th><th class="num">Siftdog<br>basic</th><th class="num">Tavily<br>basic</th><th class="num">Siftdog<br>advanced</th><th class="num">Tavily<br>advanced</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>Factual answer found (of 25)</th><td class="num">24</td><td class="num best">25</td><td class="num best">25</td><td class="num best">25</td></tr>
+    <tr><th>Official docs returned (of 10)</th><td class="num best">9</td><td class="num">7</td><td class="num best">9</td><td class="num">3</td></tr>
+    <tr><th>Official docs ranked first (of 10)</th><td class="num best">3</td><td class="num">1</td><td class="num best">7</td><td class="num">1</td></tr>
+    <tr><th>Median latency</th><td class="num">1.61s</td><td class="num best">1.25s</td><td class="num best">2.19s</td><td class="num">2.81s</td></tr>
+    <tr><th>95th percentile latency</th><td class="num best">3.03s</td><td class="num">3.09s</td><td class="num best">4.55s</td><td class="num">5.02s</td></tr>
+    <tr><th>Errors (of 45)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+    <tr><th>Cost per 1,000 searches</th><td class="num best">$0</td><td class="num">$8</td><td class="num best">$0</td><td class="num">$16</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">Highlighted: better within each mode. Siftdog's cost excludes its server. Tavily's is pay-as-you-go ($0.008 per credit).</p>
+
+<h2>Method</h2>
+<ul>
+  <li>Both called through the official <code>tavily-python</code> client with identical arguments; only the base URL differed.</li>
+  <li>45 queries: 25 factual questions with a known answer, 10 technical questions with an official docs site, 5 news, 5 open-ended. 5 results each, basic and advanced.</li>
+</ul>
+
+<h2>Caveats</h2>
+<ul>
+  <li>Some of Siftdog's search engines (Google, Google CSE, Brave) were rate-limiting the test machine, so these numbers aren't Siftdog at full strength.</li>
+  <li>Small sample: a difference of one or two queries isn't significant.</li>
+  <li>Siftdog ran locally; Tavily over the internet.</li>
+  <li>A single run on 25 September 2026. Results change over time.</li>
+</ul>
+
+<h2>Reproduce it</h2>
+<pre><code>pip install -r bench/requirements.txt
+docker compose up -d
+TAVILY_API_KEY=tvly-... python bench/run.py --delay 6
+python bench/report.py bench/results/&lt;timestamp&gt;</code></pre>
+<p class="note">Code and queries: <a href={`${GITHUB_URL}/tree/main/bench`}><code>bench/</code></a>. A full run uses about 135 Tavily credits. Not affiliated with Tavily; Tavily is a trademark of its owner.</p>
+</Base>

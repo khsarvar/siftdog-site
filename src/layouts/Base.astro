@@ -1,0 +1,67 @@
+---
+// Shared page shell: <head> metadata (canonical, Open Graph, JSON-LD), navigation and footer.
+import { GITHUB_URL, SITE_NAME } from "../site";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Which nav item is the current page. */
+  current?: "home" | "benchmark" | "blog" | "hosted";
+  /** JSON-LD object (or @graph) for this page. */
+  jsonLd?: object;
+  ogType?: "website" | "article";
+}
+
+const { title, description, current, jsonLd, ogType = "website" } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const nav = [
+  { href: "/#quick-start", label: "Quick start" },
+  { href: "/#mcp", label: "MCP" },
+  { href: "/benchmark/", label: "Benchmark", key: "benchmark" },
+  { href: "/blog/", label: "Blog", key: "blog" },
+  { href: "/hosted/", label: "Hosted", key: "hosted" },
+  { href: GITHUB_URL, label: "GitHub" },
+];
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="canonical" href={canonical}>
+<meta property="og:type" content={ogType}>
+<meta property="og:site_name" content={SITE_NAME}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:url" content={canonical}>
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="Siftdog blog" href="/rss.xml">
+<link rel="sitemap" href="/sitemap-index.xml">
+{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+<link rel="stylesheet" href="/style.css">
+<script is:inline src="/site.js" defer></script>
+</head>
+<body>
+<nav class="site-nav" aria-label="Main">
+  <div class="nav-inner">
+    <a class="brand" href="/" aria-current={current === "home" ? "page" : undefined}>{SITE_NAME}</a>
+    <div class="nav-links">
+      {nav.map((item) => (
+        <a href={item.href} aria-current={item.key && item.key === current ? "page" : undefined}>
+          {item.label}
+        </a>
+      ))}
+    </div>
+  </div>
+</nav>
+<main>
+  <slot />
+  <footer>
+    <p>Siftdog is MIT licensed. The name is covered by the <a href={`${GITHUB_URL}/blob/main/TRADEMARKS.md`}>trademark policy</a>. <a href="/rss.xml">RSS</a> · <a href={GITHUB_URL}>GitHub</a></p>
+  </footer>
+</main>
+</body>
+</html>

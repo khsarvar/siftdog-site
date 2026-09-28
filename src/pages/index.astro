@@ -1,0 +1,163 @@
+---
+import Base from "../layouts/Base.astro";
+import { AUTHOR, GITHUB_URL } from "../site";
+
+const faq = [
+  {
+    q: "What is Siftdog?",
+    a: "Siftdog is an open-source web search and extraction API for AI agents. It reproduces the Tavily API (/search, /extract, /crawl, /map) on infrastructure you run yourself, using SearXNG for search results, trafilatura for content extraction and BM25 for relevance ranking.",
+  },
+  {
+    q: "Is Siftdog a drop-in replacement for Tavily?",
+    a: "For the four core endpoints, yes. Request and response fields match Tavily's, and the official tavily-python SDK and langchain-tavily work by setting api_base_url. Relevance scores come from BM25 rather than a neural reranker, and Tavily's /research endpoint isn't implemented.",
+  },
+  {
+    q: "Do I need a search API key?",
+    a: "No. Search results come from SearXNG, which queries public search engines. The only optional key is ANTHROPIC_API_KEY, used when a request sets include_answer.",
+  },
+  {
+    q: "Does Siftdog have an MCP server?",
+    a: "Yes. The API server exposes MCP over Streamable HTTP at /mcp, and uvx siftdog mcp runs it over stdio for local clients such as Claude Desktop, Claude Code and Cursor. It provides four tools: siftdog_search, siftdog_extract, siftdog_crawl and siftdog_map.",
+  },
+  {
+    q: "Is it safe to expose Siftdog on a public server?",
+    a: "Set API_KEYS so only your clients can call it. Because /extract and /crawl fetch caller-supplied URLs, Siftdog refuses private, loopback and link-local addresses, checked on every redirect and at connect time against the exact address used, which also stops DNS rebinding.",
+  },
+];
+
+const site = "https://siftdog.com/";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "WebSite", "@id": `${site}#website`, name: "Siftdog", url: site },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${site}#software`,
+      name: "Siftdog",
+      alternateName: "siftdog",
+      description:
+        "Open-source, self-hosted web search, extract, crawl and map API for AI agents. A drop-in replacement for the Tavily API, with a built-in MCP server.",
+      url: site,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Linux, macOS",
+      license: "https://opensource.org/licenses/MIT",
+      isAccessibleForFree: true,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      downloadUrl: "https://pypi.org/project/siftdog/",
+      installUrl: `${GITHUB_URL}#quick-start`,
+      sameAs: [GITHUB_URL, "https://pypi.org/project/siftdog/", `${GITHUB_URL}/pkgs/container/siftdog`],
+      author: AUTHOR,
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": `${site}#source`,
+      name: "Siftdog",
+      codeRepository: GITHUB_URL,
+      programmingLanguage: "Python",
+      license: "https://opensource.org/licenses/MIT",
+      targetProduct: { "@id": `${site}#software` },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${site}#faq`,
+      mainEntity: faq.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      })),
+    },
+  ],
+};
+---
+<Base
+  title="Siftdog — open-source, self-hosted Tavily alternative"
+  description="Siftdog is an open-source, self-hosted web search, extract, crawl and map API for AI agents. A drop-in replacement for the Tavily API, with an MCP server. MIT licensed."
+  current="home"
+  jsonLd={jsonLd}
+>
+<header>
+  <h1>Siftdog</h1>
+  <p class="tagline">Open-source, self-hosted Tavily alternative: web search, extract, crawl and map for AI agents.</p>
+  <p><strong>Siftdog is a self-hosted web search API for AI agents and LLM apps, and a drop-in replacement for the Tavily API.</strong> It serves the same <code>/search</code>, <code>/extract</code>, <code>/crawl</code> and <code>/map</code> endpoints with the same request and response shapes, so code written for Tavily works against your own server by changing only the base URL. It needs no search API key and is MIT licensed.</p>
+  <div class="buttons">
+    <a class="button primary" href={GITHUB_URL}>View on GitHub</a>
+    <a class="button" href="https://pypi.org/project/siftdog/">PyPI</a>
+    <a class="button" href={`${GITHUB_URL}/pkgs/container/siftdog`}>Docker image</a>
+  </div>
+</header>
+
+<section id="features">
+  <h2>Features</h2>
+  <ul class="features">
+    <li><strong>Search</strong> through a <a href="https://github.com/searxng/searxng">SearXNG</a> metasearch instance, with no search API keys</li>
+    <li><strong>Extraction</strong> of clean markdown or text from web pages with <a href="https://github.com/adbar/trafilatura">trafilatura</a></li>
+    <li><strong>Ranking</strong>: BM25 relevance blended with the search engine's order; <code>advanced</code> depth returns each page's most relevant passages</li>
+    <li><strong>Crawling and site maps</strong> with depth, breadth, limit and regex path/domain filters</li>
+    <li><strong>MCP server</strong> for Claude Code, Claude Desktop, Cursor and other MCP clients, over HTTP at <code>/mcp</code> or stdio</li>
+    <li><strong>SSRF protection</strong>: private and internal addresses are blocked, including via redirects and DNS rebinding</li>
+  </ul>
+</section>
+
+<section id="quick-start">
+  <h2>Quick start</h2>
+  <p>The full stack, with SearXNG for search:</p>
+<pre><code>git clone https://github.com/khsarvar/siftdog &amp;&amp; cd siftdog
+docker compose up</code></pre>
+  <p>Or run the image on its own (<code>/extract</code>, <code>/crawl</code> and <code>/map</code> work without SearXNG), or install from PyPI:</p>
+<pre><code>docker run -p 8000:8000 ghcr.io/khsarvar/siftdog
+pip install siftdog</code></pre>
+</section>
+
+<section id="tavily">
+  <h2>Drop-in replacement for the Tavily API</h2>
+  <p>Point the official Tavily Python SDK or LangChain integration at your server:</p>
+<pre><code>from tavily import TavilyClient
+
+client = TavilyClient(api_key="your-siftdog-key", api_base_url="http://localhost:8000")
+results = client.search("latest python release", search_depth="advanced")</code></pre>
+  <p class="note">Tested with <code>tavily-python</code> 0.8.4 (search, extract, crawl, map) and <code>langchain-tavily</code> 0.2.18 (search, extract).</p>
+</section>
+
+<section id="mcp">
+  <h2>MCP server for Claude, Cursor and other clients</h2>
+  <p>Four read-only tools: <code>siftdog_search</code>, <code>siftdog_extract</code>, <code>siftdog_crawl</code> and <code>siftdog_map</code>. Run locally over stdio with <a href="https://docs.astral.sh/uv/">uv</a>:</p>
+<pre><code>claude mcp add siftdog -- uvx siftdog mcp</code></pre>
+  <p>Or connect to a running server over HTTP:</p>
+<pre><code>claude mcp add --transport http siftdog http://localhost:8000/mcp</code></pre>
+  <p class="note">Listed in the official MCP Registry as <code>io.github.khsarvar/siftdog</code>. Step-by-step guide: <a href="/blog/add-web-search-to-claude-code/">add self-hosted web search to Claude Code</a>.</p>
+</section>
+
+<section id="compare">
+  <h2>Siftdog vs Tavily, Firecrawl and crw</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Siftdog</th><th>Tavily</th><th>Firecrawl</th><th>crw</th></tr></thead>
+    <tbody>
+      <tr><th>License</th><td>MIT</td><td>Proprietary (hosted service)</td><td>AGPL-3.0</td><td>AGPL-3.0</td></tr>
+      <tr><th>Self-hosted</th><td>Yes</td><td>No</td><td>Yes</td><td>Yes (also a managed API)</td></tr>
+      <tr><th>Tavily-compatible API</th><td>Yes</td><td>—</td><td>No (own API)</td><td>No (own API)</td></tr>
+      <tr><th>Search source</th><td>SearXNG metasearch</td><td>Proprietary</td><td>—</td><td>SearXNG (bundled)</td></tr>
+      <tr><th>JavaScript rendering</th><td>No (static HTML)</td><td>—</td><td>Yes</td><td>Yes (Lightpanda, Chrome fallback)</td></tr>
+      <tr><th>MCP server</th><td>Yes (HTTP and stdio)</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+      <tr><th>Language</th><td>Python</td><td>—</td><td>TypeScript</td><td>Rust</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Measured results: <a href="/benchmark/">Siftdog vs Tavily search benchmark</a>.</p>
+  <p class="note">If you'd rather not run infrastructure, use hosted Tavily or join the <a href="/hosted/">hosted Siftdog waitlist</a>. If you need JavaScript-rendered pages, look at Firecrawl or crw. Siftdog is for teams that want the Tavily API on their own servers under a permissive license.</p>
+</section>
+
+<section id="faq">
+  <h2>FAQ</h2>
+  <h3>What is Siftdog?</h3>
+  <p>Siftdog is an open-source web search and extraction API for AI agents. It reproduces the Tavily API (<code>/search</code>, <code>/extract</code>, <code>/crawl</code>, <code>/map</code>) on infrastructure you run yourself, using SearXNG for search results, trafilatura for content extraction and BM25 for relevance ranking.</p>
+  <h3>Is Siftdog a drop-in replacement for Tavily?</h3>
+  <p>For the four core endpoints, yes. Request and response fields match Tavily's, and the official <code>tavily-python</code> SDK and <code>langchain-tavily</code> work by setting <code>api_base_url</code>. Relevance scores come from BM25 rather than a neural reranker, and Tavily's <code>/research</code> endpoint isn't implemented.</p>
+  <h3>Do I need a search API key?</h3>
+  <p>No. Search results come from SearXNG, which queries public search engines. The only optional key is <code>ANTHROPIC_API_KEY</code>, used when a request sets <code>include_answer</code>.</p>
+  <h3>Does Siftdog have an MCP server?</h3>
+  <p>Yes. The API server exposes MCP over Streamable HTTP at <code>/mcp</code>, and <code>uvx siftdog mcp</code> runs it over stdio for local clients such as Claude Desktop, Claude Code and Cursor. It provides four tools: <code>siftdog_search</code>, <code>siftdog_extract</code>, <code>siftdog_crawl</code> and <code>siftdog_map</code>.</p>
+  <h3>Is it safe to expose Siftdog on a public server?</h3>
+  <p>Set <code>API_KEYS</code> so only your clients can call it. Because <code>/extract</code> and <code>/crawl</code> fetch caller-supplied URLs, Siftdog refuses private, loopback and link-local addresses, checked on every redirect and at connect time against the exact address used, which also stops DNS rebinding.</p>
+</section>
+</Base>

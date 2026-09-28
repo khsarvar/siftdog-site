@@ -1,0 +1,87 @@
+---
+import Base from "../layouts/Base.astro";
+
+const description =
+  "Hosted Siftdog: the same Tavily-compatible search API and MCP server, without running servers. Join the waitlist.";
+---
+<Base title="Hosted Siftdog — waitlist" description={description} current="hosted">
+<header>
+  <h1>Hosted Siftdog</h1>
+  <p class="tagline">The same API and MCP server, without running servers. Not available yet.</p>
+</header>
+
+<div class="takeaways">
+  <ul>
+    <li><strong>Drop-in for Tavily:</strong> switch by changing the base URL.</li>
+    <li><strong>MCP endpoint</strong> for Claude Code, Cursor and other clients.</li>
+    <li><strong>Planned:</strong> licensed search sources (no scraping rate limits), API keys and a usage dashboard.</li>
+  </ul>
+</div>
+
+<h2>Join the waitlist</h2>
+<form id="waitlist" class="waitlist" novalidate>
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com">
+
+  <label for="use_case">What would you use it for? <span class="note">(optional)</span></label>
+  <textarea id="use_case" name="use_case" rows="3" maxlength="500"></textarea>
+
+  <!-- Honeypot: hidden from people; bots that fill it are ignored. -->
+  <div class="hp" aria-hidden="true">
+    <label for="website">Website</label>
+    <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+  </div>
+
+  <button class="button primary" type="submit">Join the waitlist</button>
+  <p id="waitlist-status" class="note" role="status" aria-live="polite"></p>
+  <noscript><p class="note">This form needs JavaScript.</p></noscript>
+</form>
+<p class="note">We only use your email to tell you when hosted Siftdog opens. Reply to any email from us to be removed.</p>
+
+<p>Prefer to run it yourself? It's free and open source: <a href="/#quick-start">quick start</a>.</p>
+</Base>
+
+<script>
+  import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "../site";
+
+  const form = document.getElementById("waitlist") as HTMLFormElement;
+  const status = document.getElementById("waitlist-status") as HTMLParagraphElement;
+  const button = form.querySelector("button") as HTMLButtonElement;
+  const show = (text: string) => (status.textContent = text);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const email = String(data.get("email") ?? "").trim();
+    const useCase = String(data.get("use_case") ?? "").trim();
+
+    if (String(data.get("website") ?? "")) return show("Thanks, you're on the list."); // bot
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return show("Please enter a valid email.");
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return show("The waitlist isn't connected yet.");
+
+    button.disabled = true;
+    show("Sending…");
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ email, use_case: useCase || null, source: "hosted-page" }),
+      });
+      // 409: already signed up, which is fine.
+      if (response.ok || response.status === 409) {
+        form.reset();
+        show("Thanks, you're on the list.");
+      } else {
+        show("Something went wrong. Please try again later.");
+      }
+    } catch {
+      show("Couldn't reach the server. Please try again later.");
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>

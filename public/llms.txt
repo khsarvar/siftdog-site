@@ -1,0 +1,17 @@
+# Siftdog
+
+> Siftdog is an open-source (MIT), self-hosted web search, extract, crawl and map API for AI agents. It is a drop-in replacement for the Tavily API (same /search, /extract, /crawl, /map endpoints and response shapes) and includes an MCP server with the tools siftdog_search, siftdog_extract, siftdog_crawl and siftdog_map. Search results come from SearXNG, so no search API key is needed.
+
+## Get started
+- [Homepage and quick start](https://siftdog.com/): install with `pip install siftdog`, `docker run ghcr.io/khsarvar/siftdog`, or `docker compose up` for the full stack
+- [Source code](https://github.com/khsarvar/siftdog): README, API reference and configuration
+- [PyPI package](https://pypi.org/project/siftdog/)
+
+## Guides
+- [Add self-hosted web search to Claude Code with MCP](https://siftdog.com/blog/add-web-search-to-claude-code/)
+
+## Results
+- [Siftdog vs Tavily search benchmark](https://siftdog.com/benchmark/): 45 queries; on par on factual answers, official documentation returned more often, no per-search cost
+
+## Hosted version
+- [Hosted Siftdog waitlist](https://siftdog.com/hosted/): not available yet

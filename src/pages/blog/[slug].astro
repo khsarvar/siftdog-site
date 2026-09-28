@@ -1,0 +1,77 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { AUTHOR, formatDate } from "../../site";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, description, pubDate, updatedDate, tags, faq } = post.data;
+const url = new URL(`/blog/${post.id}/`, Astro.site).href;
+
+const graph: object[] = [
+  {
+    "@type": "BlogPosting",
+    "@id": `${url}#post`,
+    headline: title,
+    description,
+    datePublished: pubDate.toISOString().slice(0, 10),
+    dateModified: (updatedDate ?? pubDate).toISOString().slice(0, 10),
+    author: AUTHOR,
+    publisher: AUTHOR,
+    mainEntityOfPage: url,
+    keywords: tags.join(", "),
+    about: { "@id": "https://siftdog.com/#software" },
+  },
+];
+if (faq?.length) {
+  graph.push({
+    "@type": "FAQPage",
+    "@id": `${url}#faq`,
+    mainEntity: faq.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  });
+}
+---
+<Base
+  title={`${title} — Siftdog`}
+  description={description}
+  current="blog"
+  jsonLd={{ "@context": "https://schema.org", "@graph": graph }}
+  ogType="article"
+>
+<article class="post">
+  <header>
+    <h1>{title}</h1>
+    <p class="meta">
+      {formatDate(pubDate)}
+      {updatedDate && <> · updated {formatDate(updatedDate)}</>}
+    </p>
+  </header>
+
+  <Content />
+
+  {faq?.length && (
+    <section id="faq">
+      <h2>FAQ</h2>
+      {faq.map(({ q, a }) => (
+        <>
+          <h3>{q}</h3>
+          <p>{a}</p>
+        </>
+      ))}
+    </section>
+  )}
+
+  <aside class="takeaways next-steps">
+    <strong>Next:</strong> <a href="/#quick-start">Quick start</a> · <a href="/#mcp">MCP setup</a> · <a href="/benchmark/">Benchmark vs Tavily</a> · <a href="/hosted/">Hosted version waitlist</a>
+  </aside>
+</article>
+</Base>
