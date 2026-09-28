@@ -9,17 +9,20 @@ const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort(
 const description = "Guides and results for Siftdog, the open-source, self-hosted Tavily alternative.";
 ---
 <Base title="Blog — Siftdog" description={description} current="blog">
-<header>
-  <h1>Blog</h1>
-  <p class="tagline">{description}</p>
+<header class="page-head">
+  <p class="eyebrow">Blog</p>
+  <h1>Guides and results</h1>
+  <p class="lead">{description}</p>
 </header>
 
 <ul class="post-list">
   {posts.map((post) => (
     <li>
-      <a href={`/blog/${post.id}/`}>{post.data.title}</a>
-      <p class="meta">{formatDate(post.data.pubDate)}</p>
-      <p>{post.data.description}</p>
+      <a class="card" href={`/blog/${post.id}/`}>
+        <p class="meta">{formatDate(post.data.pubDate)}</p>
+        <h2>{post.data.title}</h2>
+        <p>{post.data.description}</p>
+      </a>
     </li>
   ))}
 </ul>

@@ -68,96 +68,232 @@ const jsonLd = {
     },
   ],
 };
+
+// Small line icons (24×24, stroke = currentColor).
+const icons = {
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>',
+  extract: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  crawl: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 8l3.3 7.6M16.5 8l-3.3 7.6M8.5 6h7"/>',
+  mcp: '<path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0z"/><path d="M12 16v5"/>',
+  swap: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+};
+const svg = (paths: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+
+const features = [
+  { icon: icons.search, title: "Search", text: "Ranked web results through SearXNG, with no search API key. BM25 relevance blended with the engines' order." },
+  { icon: icons.extract, title: "Extract", text: "Clean markdown or text from up to 20 pages per request, with trafilatura." },
+  { icon: icons.crawl, title: "Crawl & map", text: "Follow a site's links with depth, breadth, limit and regex filters, or just list its URLs." },
+  { icon: icons.mcp, title: "MCP server", text: "Four read-only tools for Claude Code, Cursor and other clients, over stdio or HTTP at /mcp." },
+  { icon: icons.swap, title: "Tavily-compatible", text: "Same endpoints and response shapes. The official tavily-python SDK and LangChain work unchanged." },
+  { icon: icons.shield, title: "Safe to expose", text: "API keys, plus private-address blocking on every redirect and at connect time (stops DNS rebinding)." },
+];
 ---
 <Base
   title="Siftdog — open-source, self-hosted Tavily alternative"
   description="Siftdog is an open-source, self-hosted web search, extract, crawl and map API for AI agents. A drop-in replacement for the Tavily API, with an MCP server. MIT licensed."
   current="home"
   jsonLd={jsonLd}
+  layout="landing"
 >
-<header>
-  <h1>Siftdog</h1>
-  <p class="tagline">Open-source, self-hosted Tavily alternative: web search, extract, crawl and map for AI agents.</p>
-  <p><strong>Siftdog is a self-hosted web search API for AI agents and LLM apps, and a drop-in replacement for the Tavily API.</strong> It serves the same <code>/search</code>, <code>/extract</code>, <code>/crawl</code> and <code>/map</code> endpoints with the same request and response shapes, so code written for Tavily works against your own server by changing only the base URL. It needs no search API key and is MIT licensed.</p>
-  <div class="buttons">
-    <a class="button primary" href={GITHUB_URL}>View on GitHub</a>
-    <a class="button" href="https://pypi.org/project/siftdog/">PyPI</a>
-    <a class="button" href={`${GITHUB_URL}/pkgs/container/siftdog`}>Docker image</a>
+<section class="hero">
+  <div class="container">
+    <div>
+      <a class="pill" href={`${GITHUB_URL}/releases`}><b>v0.3.0</b> Open source · MIT licensed</a>
+      <h1>Web search for <span class="gradient-text">AI agents</span>, on your own servers.</h1>
+      <p class="lead">Siftdog is a self-hosted, Tavily-compatible API to search, extract, crawl and map the web. No search API key, no per‑search bill.</p>
+      <div class="buttons">
+        <a class="btn btn-primary" href="#quick-start">Self-host free →</a>
+        <a class="btn btn-secondary" href="/hosted/">Join hosted waitlist</a>
+      </div>
+      <p class="hero-note">Python · Docker · MCP · works with the Tavily SDK</p>
+    </div>
+    <div class="terminal" aria-label="Adding Siftdog to Claude Code">
+      <div class="terminal-bar"><span></span><span></span><span></span><em>terminal</em></div>
+      <pre data-no-copy><span class="p">$</span> <span class="c">claude mcp add siftdog -- uvx siftdog mcp</span>
+<span class="o">Added stdio MCP server siftdog with command:</span>
+<span class="o">uvx siftdog mcp to local config</span>
+
+<span class="p">$</span> <span class="c">claude mcp get siftdog</span>
+<span class="o">siftdog:</span>
+<span class="o">  Status:</span> <span class="ok">✔ Connected</span>
+<span class="o">  Type: stdio</span>
+
+<span class="p">&gt;</span> <span class="c">Use siftdog to find what's new in Python 3.14</span>
+<span class="k">  Called siftdog</span></pre>
+    </div>
   </div>
-</header>
-
-<section id="features">
-  <h2>Features</h2>
-  <ul class="features">
-    <li><strong>Search</strong> through a <a href="https://github.com/searxng/searxng">SearXNG</a> metasearch instance, with no search API keys</li>
-    <li><strong>Extraction</strong> of clean markdown or text from web pages with <a href="https://github.com/adbar/trafilatura">trafilatura</a></li>
-    <li><strong>Ranking</strong>: BM25 relevance blended with the search engine's order; <code>advanced</code> depth returns each page's most relevant passages</li>
-    <li><strong>Crawling and site maps</strong> with depth, breadth, limit and regex path/domain filters</li>
-    <li><strong>MCP server</strong> for Claude Code, Claude Desktop, Cursor and other MCP clients, over HTTP at <code>/mcp</code> or stdio</li>
-    <li><strong>SSRF protection</strong>: private and internal addresses are blocked, including via redirects and DNS rebinding</li>
-  </ul>
 </section>
 
-<section id="quick-start">
-  <h2>Quick start</h2>
-  <p>The full stack, with SearXNG for search:</p>
-<pre><code>git clone https://github.com/khsarvar/siftdog &amp;&amp; cd siftdog
-docker compose up</code></pre>
-  <p>Or run the image on its own (<code>/extract</code>, <code>/crawl</code> and <code>/map</code> work without SearXNG), or install from PyPI:</p>
-<pre><code>docker run -p 8000:8000 ghcr.io/khsarvar/siftdog
-pip install siftdog</code></pre>
+<div class="works-with">
+  <div class="container">
+    <span class="label">Works with</span>
+    <ul>
+      <li>Claude Code</li><li>Cursor</li><li>Claude Desktop</li><li>tavily-python</li><li>LangChain</li>
+    </ul>
+  </div>
+</div>
+
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Features</p>
+      <h2>Everything an agent needs from the web</h2>
+      <p>The four Tavily endpoints, an MCP server and the safety checks for running it in public.</p>
+    </div>
+    <div class="grid-3">
+      {features.map((f) => (
+        <div class="card">
+          <div class="icon" set:html={svg(f.icon)} />
+          <h3>{f.title}</h3>
+          <p>{f.text}</p>
+        </div>
+      ))}
+    </div>
+  </div>
 </section>
 
-<section id="tavily">
-  <h2>Drop-in replacement for the Tavily API</h2>
-  <p>Point the official Tavily Python SDK or LangChain integration at your server:</p>
+<section class="section" id="tavily">
+  <div class="container grid-2">
+    <div>
+      <p class="eyebrow">Drop-in</p>
+      <h2>Switch from Tavily by changing one line</h2>
+      <p class="muted">Same <code>/search</code>, <code>/extract</code>, <code>/crawl</code> and <code>/map</code> endpoints, same request and response fields. Point the official client at your server and keep your code.</p>
+      <p class="note">Tested with <code>tavily-python</code> 0.8.4 (search, extract, crawl, map) and <code>langchain-tavily</code> 0.2.18 (search, extract).</p>
+    </div>
+    <div class="diff">
+      <p class="label">Python</p>
 <pre><code>from tavily import TavilyClient
 
-client = TavilyClient(api_key="your-siftdog-key", api_base_url="http://localhost:8000")
+client = TavilyClient(
+    api_key="your-siftdog-key",
+    <span class="add">api_base_url="http://localhost:8000",</span>
+)
 results = client.search("latest python release", search_depth="advanced")</code></pre>
-  <p class="note">Tested with <code>tavily-python</code> 0.8.4 (search, extract, crawl, map) and <code>langchain-tavily</code> 0.2.18 (search, extract).</p>
-</section>
-
-<section id="mcp">
-  <h2>MCP server for Claude, Cursor and other clients</h2>
-  <p>Four read-only tools: <code>siftdog_search</code>, <code>siftdog_extract</code>, <code>siftdog_crawl</code> and <code>siftdog_map</code>. Run locally over stdio with <a href="https://docs.astral.sh/uv/">uv</a>:</p>
-<pre><code>claude mcp add siftdog -- uvx siftdog mcp</code></pre>
-  <p>Or connect to a running server over HTTP:</p>
-<pre><code>claude mcp add --transport http siftdog http://localhost:8000/mcp</code></pre>
-  <p class="note">Listed in the official MCP Registry as <code>io.github.khsarvar/siftdog</code>. Step-by-step guide: <a href="/blog/add-web-search-to-claude-code/">add self-hosted web search to Claude Code</a>.</p>
-</section>
-
-<section id="compare">
-  <h2>Siftdog vs Tavily, Firecrawl and crw</h2>
-  <div class="table-wrap">
-  <table>
-    <thead><tr><th></th><th>Siftdog</th><th>Tavily</th><th>Firecrawl</th><th>crw</th></tr></thead>
-    <tbody>
-      <tr><th>License</th><td>MIT</td><td>Proprietary (hosted service)</td><td>AGPL-3.0</td><td>AGPL-3.0</td></tr>
-      <tr><th>Self-hosted</th><td>Yes</td><td>No</td><td>Yes</td><td>Yes (also a managed API)</td></tr>
-      <tr><th>Tavily-compatible API</th><td>Yes</td><td>—</td><td>No (own API)</td><td>No (own API)</td></tr>
-      <tr><th>Search source</th><td>SearXNG metasearch</td><td>Proprietary</td><td>—</td><td>SearXNG (bundled)</td></tr>
-      <tr><th>JavaScript rendering</th><td>No (static HTML)</td><td>—</td><td>Yes</td><td>Yes (Lightpanda, Chrome fallback)</td></tr>
-      <tr><th>MCP server</th><td>Yes (HTTP and stdio)</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-      <tr><th>Language</th><td>Python</td><td>—</td><td>TypeScript</td><td>Rust</td></tr>
-    </tbody>
-  </table>
+    </div>
   </div>
-  <p>Measured results: <a href="/benchmark/">Siftdog vs Tavily search benchmark</a>.</p>
-  <p class="note">If you'd rather not run infrastructure, use hosted Tavily or join the <a href="/hosted/">hosted Siftdog waitlist</a>. If you need JavaScript-rendered pages, look at Firecrawl or crw. Siftdog is for teams that want the Tavily API on their own servers under a permissive license.</p>
 </section>
 
-<section id="faq">
-  <h2>FAQ</h2>
-  <h3>What is Siftdog?</h3>
-  <p>Siftdog is an open-source web search and extraction API for AI agents. It reproduces the Tavily API (<code>/search</code>, <code>/extract</code>, <code>/crawl</code>, <code>/map</code>) on infrastructure you run yourself, using SearXNG for search results, trafilatura for content extraction and BM25 for relevance ranking.</p>
-  <h3>Is Siftdog a drop-in replacement for Tavily?</h3>
-  <p>For the four core endpoints, yes. Request and response fields match Tavily's, and the official <code>tavily-python</code> SDK and <code>langchain-tavily</code> work by setting <code>api_base_url</code>. Relevance scores come from BM25 rather than a neural reranker, and Tavily's <code>/research</code> endpoint isn't implemented.</p>
-  <h3>Do I need a search API key?</h3>
-  <p>No. Search results come from SearXNG, which queries public search engines. The only optional key is <code>ANTHROPIC_API_KEY</code>, used when a request sets <code>include_answer</code>.</p>
-  <h3>Does Siftdog have an MCP server?</h3>
-  <p>Yes. The API server exposes MCP over Streamable HTTP at <code>/mcp</code>, and <code>uvx siftdog mcp</code> runs it over stdio for local clients such as Claude Desktop, Claude Code and Cursor. It provides four tools: <code>siftdog_search</code>, <code>siftdog_extract</code>, <code>siftdog_crawl</code> and <code>siftdog_map</code>.</p>
-  <h3>Is it safe to expose Siftdog on a public server?</h3>
-  <p>Set <code>API_KEYS</code> so only your clients can call it. Because <code>/extract</code> and <code>/crawl</code> fetch caller-supplied URLs, Siftdog refuses private, loopback and link-local addresses, checked on every redirect and at connect time against the exact address used, which also stops DNS rebinding.</p>
+<section class="section" id="mcp">
+  <div class="container grid-2">
+    <div>
+      <p class="eyebrow">MCP</p>
+      <h2>Give your agent web tools in one command</h2>
+      <p class="muted">Four read-only tools: <code>siftdog_search</code>, <code>siftdog_extract</code>, <code>siftdog_crawl</code> and <code>siftdog_map</code>. Listed in the official MCP Registry as <code>io.github.khsarvar/siftdog</code>.</p>
+      <p><a href="/blog/add-web-search-to-claude-code/">Step-by-step guide for Claude Code →</a></p>
+    </div>
+    <div>
+      <p class="note">Run locally over stdio with <a href="https://docs.astral.sh/uv/">uv</a>:</p>
+<pre><code>claude mcp add siftdog -- uvx siftdog mcp</code></pre>
+      <p class="note">Or connect to a running server over HTTP:</p>
+<pre><code>claude mcp add --transport http siftdog http://localhost:8000/mcp</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="benchmark">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Benchmark</p>
+      <h2>Measured against Tavily</h2>
+      <p>45 queries through the same client, 25 September 2026.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong>25/25</strong><span>factual answers found in advanced mode, same as Tavily</span></div>
+      <div class="stat"><strong>9/10</strong><span>official docs returned (Tavily: 7 basic, 3 advanced)</span></div>
+      <div class="stat"><strong>$0</strong><span>per search, vs $8–16 per 1,000 on Tavily</span></div>
+    </div>
+    <p><a href="/benchmark/">Full results, method and caveats →</a></p>
+  </div>
+</section>
+
+<section class="section" id="quick-start">
+  <div class="container grid-2">
+    <div>
+      <p class="eyebrow">Quick start</p>
+      <h2>Running in a minute</h2>
+      <p class="muted">The Compose stack includes SearXNG for search. The image and the Python package work on their own for extract, crawl and map.</p>
+    </div>
+    <div class="tabs">
+      <div class="tab-list" role="tablist" aria-label="Install options">
+        <button role="tab" id="tab-compose" aria-controls="panel-compose" aria-selected="true">Docker Compose</button>
+        <button role="tab" id="tab-docker" aria-controls="panel-docker" aria-selected="false">Docker</button>
+        <button role="tab" id="tab-pip" aria-controls="panel-pip" aria-selected="false">pip</button>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-compose" aria-labelledby="tab-compose">
+<pre><code>git clone https://github.com/khsarvar/siftdog
+cd siftdog
+docker compose up</code></pre>
+        <p>API on port 8000 with SearXNG. OpenAPI docs at <code>/docs</code>.</p>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-docker" aria-labelledby="tab-docker">
+<pre><code>docker run -p 8000:8000 ghcr.io/khsarvar/siftdog</code></pre>
+        <p>Add <code>-e SEARXNG_URL=…</code> to enable search. Images for amd64 and arm64.</p>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-pip" aria-labelledby="tab-pip">
+<pre><code>pip install siftdog
+siftdog --port 8000</code></pre>
+        <p>Python 3.11+. Configure with environment variables or a <code>.env</code> file.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="compare">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Compare</p>
+      <h2>Siftdog vs Tavily, Firecrawl and crw</h2>
+      <p>Pick Tavily if you'd rather not run infrastructure, Firecrawl or crw if you need JavaScript rendering. Siftdog is the Tavily API on your own servers, MIT licensed.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th class="col-us">Siftdog</th><th>Tavily</th><th>Firecrawl</th><th>crw</th></tr></thead>
+        <tbody>
+          <tr><th>License</th><td class="col-us">MIT</td><td>Proprietary (hosted service)</td><td>AGPL-3.0</td><td>AGPL-3.0</td></tr>
+          <tr><th>Self-hosted</th><td class="col-us">Yes</td><td>No</td><td>Yes</td><td>Yes (also a managed API)</td></tr>
+          <tr><th>Tavily-compatible API</th><td class="col-us">Yes</td><td>—</td><td>No (own API)</td><td>No (own API)</td></tr>
+          <tr><th>Search source</th><td class="col-us">SearXNG metasearch</td><td>Proprietary</td><td>—</td><td>SearXNG (bundled)</td></tr>
+          <tr><th>JavaScript rendering</th><td class="col-us">No (static HTML)</td><td>—</td><td>Yes</td><td>Yes (Lightpanda, Chrome fallback)</td></tr>
+          <tr><th>MCP server</th><td class="col-us">Yes (HTTP and stdio)</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+          <tr><th>Language</th><td class="col-us">Python</td><td>—</td><td>TypeScript</td><td>Rust</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-band">
+      <div>
+        <h2>Don't want to run servers?</h2>
+        <p>Hosted Siftdog is planned: the same API and MCP endpoint, licensed search sources and no infrastructure. Join the waitlist to hear when it opens.</p>
+      </div>
+      <div class="buttons" style="margin:0">
+        <a class="btn btn-primary" href="/hosted/">Join hosted waitlist</a>
+        <a class="btn btn-ghost" href="#quick-start">Self-host free</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container grid-2" style="align-items:start">
+    <div class="section-head">
+      <p class="eyebrow">FAQ</p>
+      <h2>Questions</h2>
+      <p>More in the <a href={GITHUB_URL}>README</a>.</p>
+    </div>
+    <div class="faq">
+      {faq.map(({ q, a }) => (
+        <details>
+          <summary>{q}</summary>
+          <p>{a}</p>
+        </details>
+      ))}
+    </div>
+  </div>
 </section>
 </Base>

@@ -48,12 +48,11 @@ if (faq?.length) {
   ogType="article"
 >
 <article class="post">
-  <header>
+  <header class="page-head">
+    <p class="eyebrow"><a href="/blog/">Blog</a></p>
     <h1>{title}</h1>
-    <p class="meta">
-      {formatDate(pubDate)}
-      {updatedDate && <> · updated {formatDate(updatedDate)}</>}
-    </p>
+    <p class="meta">{formatDate(pubDate)}{updatedDate && <> · updated {formatDate(updatedDate)}</>}</p>
+    <p>{tags.map((t) => <span class="tag">{t}</span>)}</p>
   </header>
 
   <Content />

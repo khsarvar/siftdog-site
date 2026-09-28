@@ -5,9 +5,10 @@ const description =
   "Hosted Siftdog: the same Tavily-compatible search API and MCP server, without running servers. Join the waitlist.";
 ---
 <Base title="Hosted Siftdog — waitlist" description={description} current="hosted">
-<header>
-  <h1>Hosted Siftdog</h1>
-  <p class="tagline">The same API and MCP server, without running servers. Not available yet.</p>
+<header class="page-head">
+  <p class="eyebrow">Hosted · coming later</p>
+  <h1>Siftdog, without running servers</h1>
+  <p class="lead">The same API and MCP server as a hosted service. Not available yet.</p>
 </header>
 
 <div class="takeaways">
@@ -18,7 +19,8 @@ const description =
   </ul>
 </div>
 
-<h2>Join the waitlist</h2>
+<div class="form-card">
+<h2 style="margin-top:0">Join the waitlist</h2>
 <form id="waitlist" class="waitlist" novalidate>
   <label for="email">Email</label>
   <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com">
@@ -32,11 +34,12 @@ const description =
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
   </div>
 
-  <button class="button primary" type="submit">Join the waitlist</button>
+  <button class="btn btn-primary" type="submit">Join the waitlist</button>
   <p id="waitlist-status" class="note" role="status" aria-live="polite"></p>
   <noscript><p class="note">This form needs JavaScript.</p></noscript>
 </form>
-<p class="note">We only use your email to tell you when hosted Siftdog opens. Reply to any email from us to be removed.</p>
+<p class="note" style="margin:0">We only use your email to tell you when hosted Siftdog opens. Reply to any email from us to be removed.</p>
+</div>
 
 <p>Prefer to run it yourself? It's free and open source: <a href="/#quick-start">quick start</a>.</p>
 </Base>

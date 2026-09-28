@@ -1,5 +1,5 @@
-// Shared script for the Siftdog project site: adds a copy button to every code block.
-// Pages work without it; the buttons are an enhancement.
+// Shared script for siftdog.com: copy buttons on code blocks and tabbed code samples.
+// Pages work without it; both are enhancements.
 const icon = (paths) =>
   `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ` +
   `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -8,7 +8,8 @@ const COPY_ICON = icon(
 );
 const CHECK_ICON = icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
 
-document.querySelectorAll("pre").forEach((pre) => {
+// Copy buttons. Terminal demos (data-no-copy) show output, so they don't get one.
+document.querySelectorAll("pre:not([data-no-copy])").forEach((pre) => {
   const wrapper = document.createElement("div");
   wrapper.className = "code-block";
   pre.replaceWith(wrapper);
@@ -47,4 +48,29 @@ document.querySelectorAll("pre").forEach((pre) => {
       button.classList.remove("copied");
     }, 1500);
   });
+});
+
+// Tabs: <div class="tabs"> with .tab-list buttons (role=tab, aria-controls) and .tab-panel panels.
+document.querySelectorAll(".tabs").forEach((tabs) => {
+  const buttons = [...tabs.querySelectorAll('[role="tab"]')];
+  const select = (chosen) => {
+    for (const b of buttons) {
+      const selected = b === chosen;
+      b.setAttribute("aria-selected", String(selected));
+      b.tabIndex = selected ? 0 : -1;
+      document.getElementById(b.getAttribute("aria-controls")).hidden = !selected;
+    }
+  };
+  buttons.forEach((b, i) => {
+    b.addEventListener("click", () => select(b));
+    b.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!step) return;
+      const next = buttons[(i + step + buttons.length) % buttons.length];
+      select(next);
+      next.focus();
+    });
+  });
+  tabs.classList.add("js");
+  select(buttons.find((b) => b.getAttribute("aria-selected") === "true") ?? buttons[0]);
 });

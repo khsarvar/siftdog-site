@@ -10,9 +10,11 @@ interface Props {
   /** JSON-LD object (or @graph) for this page. */
   jsonLd?: object;
   ogType?: "website" | "article";
+  /** "landing": sections manage their own width. "page": centered reading column. */
+  layout?: "landing" | "page";
 }
 
-const { title, description, current, jsonLd, ogType = "website" } = Astro.props;
+const { title, description, current, jsonLd, ogType = "website", layout = "page" } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const nav = [
   { href: "/#quick-start", label: "Quick start" },
@@ -20,8 +22,8 @@ const nav = [
   { href: "/benchmark/", label: "Benchmark", key: "benchmark" },
   { href: "/blog/", label: "Blog", key: "blog" },
   { href: "/hosted/", label: "Hosted", key: "hosted" },
-  { href: GITHUB_URL, label: "GitHub" },
 ];
+const year = new Date().getUTCFullYear();
 ---
 <!doctype html>
 <html lang="en">
@@ -37,6 +39,8 @@ const nav = [
 <meta property="og:description" content={description}>
 <meta property="og:url" content={canonical}>
 <meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="Siftdog blog" href="/rss.xml">
 <link rel="sitemap" href="/sitemap-index.xml">
@@ -47,21 +51,69 @@ const nav = [
 <body>
 <nav class="site-nav" aria-label="Main">
   <div class="nav-inner">
-    <a class="brand" href="/" aria-current={current === "home" ? "page" : undefined}>{SITE_NAME}</a>
+    <a class="brand" href="/" aria-current={current === "home" ? "page" : undefined}>
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a45"/><stop offset="1" stop-color="#fbbf24"/></linearGradient></defs>
+        <rect width="32" height="32" rx="8" fill="url(#bm)"/>
+        <circle cx="14" cy="14" r="6.5" fill="none" stroke="#0a0a0c" stroke-width="3"/>
+        <path d="M19 19l5.5 5.5" stroke="#0a0a0c" stroke-width="3.2" stroke-linecap="round"/>
+      </svg>
+      {SITE_NAME}
+    </a>
     <div class="nav-links">
       {nav.map((item) => (
-        <a href={item.href} aria-current={item.key && item.key === current ? "page" : undefined}>
-          {item.label}
-        </a>
+        <a href={item.href} aria-current={item.key && item.key === current ? "page" : undefined}>{item.label}</a>
       ))}
+      <a class="nav-github" href={GITHUB_URL} aria-label="Siftdog on GitHub">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
     </div>
   </div>
 </nav>
-<main>
-  <slot />
-  <footer>
-    <p>Siftdog is MIT licensed. The name is covered by the <a href={`${GITHUB_URL}/blob/main/TRADEMARKS.md`}>trademark policy</a>. <a href="/rss.xml">RSS</a> · <a href={GITHUB_URL}>GitHub</a></p>
-  </footer>
-</main>
+
+{layout === "landing" ? (
+  <main><slot /></main>
+) : (
+  <main class="page"><div class="prose"><slot /></div></main>
+)}
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-about">
+        <a class="brand" href="/">{SITE_NAME}</a>
+        <p>Open-source, self-hosted web search for AI agents. A drop-in replacement for the Tavily API.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/#quick-start">Quick start</a></li>
+          <li><a href="/#mcp">MCP server</a></li>
+          <li><a href="/benchmark/">Benchmark</a></li>
+          <li><a href="/hosted/">Hosted waitlist</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/rss.xml">RSS</a></li>
+          <li><a href="https://pypi.org/project/siftdog/">PyPI</a></li>
+          <li><a href={`${GITHUB_URL}/pkgs/container/siftdog`}>Docker image</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href={GITHUB_URL}>GitHub</a></li>
+          <li><a href={`${GITHUB_URL}/blob/main/LICENSE`}>MIT license</a></li>
+          <li><a href={`${GITHUB_URL}/blob/main/TRADEMARKS.md`}>Trademark policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© {year} Siftdog contributors · MIT licensed</div>
+  </div>
+</footer>
 </body>
 </html>
