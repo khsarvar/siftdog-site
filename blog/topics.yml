@@ -1,0 +1,16 @@
+# Blog topic backlog for the drafting workflow (.github/workflows/draft-post.yml).
+# Used after Search Console near misses; the first topic without an earlier draft PR is drafted,
+# and the draft PR removes it from this list. `angle` is optional guidance for the writer.
+topics:
+  - topic: "Add web search to Cursor with an MCP server"
+    angle: "Setup steps for Siftdog's MCP server in Cursor, mirroring the Claude Code post."
+  - topic: "Web search for local LLMs with Ollama"
+    angle: "Fully local stack: Ollama model + self-hosted Siftdog, no API keys."
+  - topic: "SearXNG JSON API: how to enable it and handle rate limits"
+    angle: "Practical SearXNG setup notes: JSON format, engines, upstream rate limits and what Siftdog does about them."
+  - topic: "Turn web pages into clean text for RAG"
+    angle: "Using /extract to get main content without boilerplate; limits (no JavaScript rendering)."
+  - topic: "Crawl a documentation site into Markdown"
+    angle: "Using /crawl and /map with path filters and depth limits."
+  - topic: "Tavily API pricing vs self-hosting"
+    angle: "Cost comparison with sourced Tavily prices; be fair about ops time and limits."

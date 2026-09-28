@@ -1,0 +1,77 @@
+name: Revise blog draft
+
+# `/revise <what to change>` as a comment on a blog-draft PR rewrites the post on its branch.
+# Only the repo owner can trigger it (public repo: nobody else may spend the API key).
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write # start pr-check on the branch
+
+concurrency:
+  group: revise-${{ github.event.issue.number }}
+
+jobs:
+  revise:
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/revise') &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.issue.labels.*.name, 'blog-draft')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.issue.number }}
+    steps:
+      - name: Find the draft branch
+        id: pr
+        run: |
+          read -r branch cross < <(gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json headRefName,isCrossRepository \
+            --jq '"\(.headRefName) \(.isCrossRepository)"')
+          if [ "$cross" != "false" ] || [[ "$branch" != draft/* ]]; then
+            echo "::error::not a draft branch in this repo: $branch"; exit 1
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "slug=${branch#draft/}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Revise
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          SLUG: ${{ steps.pr.outputs.slug }}
+          COMMENT: ${{ github.event.comment.body }}
+          REVISE_OUT: ${{ runner.temp }}/revise.md
+        run: |
+          export INSTRUCTION="${COMMENT#/revise}"
+          node scripts/draft/revise.mjs
+      - name: Check
+        run: |
+          node scripts/check-posts.mjs --allow-verify
+          npx astro check
+          npm run build
+      - name: Push and reply
+        env:
+          BRANCH: ${{ steps.pr.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Revise draft per review comment"
+          git push
+          gh pr comment "$PR" --body-file "$RUNNER_TEMP/revise.md"
+          gh workflow run pr-check.yml --ref "$BRANCH"
+      - name: Report failure
+        if: failure()
+        env:
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body "Revision failed: $RUN"
