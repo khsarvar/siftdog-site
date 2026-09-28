@@ -9,6 +9,9 @@ export const AUTHOR = { "@type": "Person", name: "Sarvar", url: "https://github.
 export const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
 export const SUPABASE_PUBLISHABLE_KEY = import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
 
+// Cloudflare Web Analytics (cookieless). Empty = no analytics script is added.
+export const CF_ANALYTICS_TOKEN = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN ?? "";
+
 export function formatDate(date: Date): string {
   // Front-matter dates are midnight UTC; format in UTC so the day doesn't shift by time zone.
   return date.toLocaleDateString("en-GB", {

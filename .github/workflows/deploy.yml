@@ -26,9 +26,10 @@ jobs:
       - run: npx astro check
       - run: npm run build
         env:
-          # Public by design (insert-only table); set as repository variables.
+          # All public by design (they end up in the page); set as repository variables.
           PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_CF_ANALYTICS_TOKEN: ${{ vars.PUBLIC_CF_ANALYTICS_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
