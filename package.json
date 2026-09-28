@@ -9,7 +9,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "check:posts": "node scripts/check-posts.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -20,5 +22,10 @@
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "google-auth-library": "^11.1.0",
+    "openai": "^7.23.0",
+    "yaml": "^2.9.1"
   }
 }

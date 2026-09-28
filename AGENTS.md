@@ -10,7 +10,13 @@ product in `khsarvar/siftdog`. Deployed by `.github/workflows/deploy.yml` to Git
 - Keep public pages short and scannable; claims must match the product and the benchmark data.
 - Waitlist: `src/pages/hosted.astro` posts to a Supabase `waitlist` table (anon insert-only RLS)
   using `PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-- Check changes with `npm run build` and `npx astro check`.
+- Check changes with `npm test`, `npm run check:posts`, `npm run build` and `npx astro check`.
+- AI drafts: `.github/workflows/draft-post.yml` (Tue/Fri + manual) runs `scripts/draft/draft.mjs`,
+  which picks a topic (manual → Search Console near miss → `blog/topics.yml` → model) and writes a
+  post with the OpenAI Responses API (`OPENAI_MODEL`, web search, Structured Outputs) following
+  `blog/STYLE.md`. It opens a `blog-draft` PR; merge publishes, `/revise …` from the owner rewrites
+  (`revise-post.yml`), close rejects. Unsure claims get `<!-- VERIFY: … -->`, which `check:posts`
+  (required `pr-check`) rejects until resolved. Tests: `scripts/**/*.test.mjs`, no network.
 
 ## Development
 

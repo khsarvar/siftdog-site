@@ -1,0 +1,115 @@
+name: Draft blog post
+
+# Writes a blog post draft with OpenAI and opens it as a PR labelled blog-draft.
+# Merge = publish; comment `/revise …` to rewrite; close = reject.
+# Topic order: manual input → Search Console near miss → blog/topics.yml → model's choice.
+on:
+  schedule:
+    - cron: "0 13 * * 2,5" # Tue + Fri, 9:00 New York (EDT) / 8:00 (EST)
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Topic to write about (empty = pick automatically)"
+        type: string
+        default: ""
+      topics_only:
+        description: "Only show Search Console near misses and the topic that would be picked"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write # create the blog-draft label
+  actions: write # start pr-check on the draft branch
+
+concurrency:
+  group: draft-post
+
+env:
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Skip if drafts are piling up
+        id: gate
+        if: github.event_name == 'schedule'
+        run: |
+          open=$(gh pr list --label blog-draft --state open --json number --jq length)
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+          if [ "$open" -ge 2 ]; then
+            MESSAGE=":memo: Skipped today's blog draft: $open drafts are waiting for review." node scripts/draft/notify.mjs
+          fi
+
+      - name: Pick topic and write draft
+        if: steps.gate.outputs.open == '' || steps.gate.outputs.open < 2
+        id: draft
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+          NEAR_MISS_MIN_IMPRESSIONS: ${{ vars.NEAR_MISS_MIN_IMPRESSIONS }}
+          TOPIC: ${{ inputs.topic }}
+          DRAFT_OUT: ${{ runner.temp }}/draft.json
+        run: |
+          node scripts/draft/draft.mjs ${{ inputs.topics_only && '--topics-only' || '' }}
+          if [ -f "$DRAFT_OUT" ]; then echo "made=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Check the draft
+        if: steps.draft.outputs.made == 'true'
+        run: |
+          npm test
+          node scripts/check-posts.mjs --allow-verify
+          npx astro check
+          npm run build
+
+      - name: Open the PR
+        if: steps.draft.outputs.made == 'true'
+        id: pr
+        env:
+          DRAFT_OUT: ${{ runner.temp }}/draft.json
+        run: |
+          branch=$(jq -r .branch "$DRAFT_OUT")
+          jq -r .prBody "$DRAFT_OUT" > "$RUNNER_TEMP/body.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add src/content/posts blog/topics.yml
+          git commit -m "$(jq -r .prTitle "$DRAFT_OUT")"
+          git push -u origin "$branch"
+          gh label create blog-draft --color FF7A45 --description "AI-drafted blog post awaiting review" --force
+          url=$(gh pr create --base main --head "$branch" --label blog-draft \
+            --title "$(jq -r .prTitle "$DRAFT_OUT")" --body-file "$RUNNER_TEMP/body.md")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          gh workflow run pr-check.yml --ref "$branch"
+
+      - name: Tell Slack
+        if: steps.pr.outputs.url
+        env:
+          DRAFT_OUT: ${{ runner.temp }}/draft.json
+          URL: ${{ steps.pr.outputs.url }}
+        run: |
+          title=$(jq -r .title "$DRAFT_OUT")
+          n=$(jq -r .verifyCount "$DRAFT_OUT")
+          MESSAGE=":memo: New blog draft: <$URL|$title> · $(jq -r .words "$DRAFT_OUT") words · $n to verify" \
+            node scripts/draft/notify.mjs
+
+      - name: Report failure
+        if: failure()
+        env:
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          MESSAGE=":warning: Blog drafting failed: <$RUN|see the run>" node scripts/draft/notify.mjs
