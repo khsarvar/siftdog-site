@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  actions: write # start pr-check on the branch
+  actions: write # approve (or start) pr-check on the branch
 
 concurrency:
   group: revise-${{ github.event.issue.number }}
@@ -80,7 +80,7 @@ jobs:
           git commit -m "Revise draft per review comment"
           git push
           gh pr comment "$PR" --body-file "$RUNNER_TEMP/revise.md"
-          gh workflow run pr-check.yml --ref "$BRANCH"
+          GITHUB_TOKEN="$GH_TOKEN" node scripts/draft/ensure-check.mjs "$BRANCH"
       - name: Report failure
         if: failure()
         env:
