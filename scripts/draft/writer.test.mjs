@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { prBody } from "./draft.mjs";
 import { parseDraftMeta, parsePost, renderPost, slugify, verifyItems, wordCount } from "./lib.mjs";
-import { POST_SCHEMA, validatePost, writePost } from "./writer.mjs";
+import { POST_SCHEMA, stripCitations, validatePost, writePost } from "./writer.mjs";
 
 const good = {
   slug: "Add Web Search to Cursor!",
@@ -85,4 +85,16 @@ test("PR body shows evidence, verify items, escaped sources and parseable meta",
   assert.match(body, /- \[ \] Cursor menu name/);
   assert.match(body, /MCP \\\| stdio/);
   assert.deepEqual(parseDraftMeta(body), { slug: "add-web-search-to-cursor", topic: "cursor mcp", source: "search-console", queries: topic.queries });
+});
+
+test("stripCitations removes web-search citation links but keeps normal links", () => {
+  const text = "Restart Cursor. ([prod.cursor.com](https://prod.cursor.com/help/mcp)) Install [uv](https://docs.astral.sh/uv/).";
+  assert.equal(stripCitations(text), "Restart Cursor. Install [uv](https://docs.astral.sh/uv/).");
+});
+
+test("writePost strips citations from body and FAQ", async () => {
+  const cited = { ...good, body: good.body + " ([cursor.com](https://cursor.com/docs))", faq: [{ q: "Q?", a: "A. ([x.io](https://x.io/a))" }] };
+  const client = { responses: { create: async () => ({ output_text: JSON.stringify(cited), output: [] }) } };
+  const { post } = await writePost({ client, instructions: "", input: "", existingSlugs: [] });
+  assert.ok(!post.body.includes("cursor.com") && post.faq[0].a === "A.");
 });

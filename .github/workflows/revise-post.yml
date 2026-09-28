@@ -39,6 +39,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr.outputs.branch }}
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: .main
+      - name: Use main's scripts, style guide and dependencies (the branch may be older)
+        run: |
+          rm -rf scripts && cp -r .main/scripts scripts
+          cp .main/blog/STYLE.md blog/STYLE.md
+          cp .main/package.json .main/package-lock.json .
+          rm -rf .main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -62,10 +72,12 @@ jobs:
       - name: Push and reply
         env:
           BRANCH: ${{ steps.pr.outputs.branch }}
+          SLUG: ${{ steps.pr.outputs.slug }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Revise draft per review comment"
+          git add "src/content/posts/$SLUG.md"
+          git commit -m "Revise draft per review comment"
           git push
           gh pr comment "$PR" --body-file "$RUNNER_TEMP/revise.md"
           gh workflow run pr-check.yml --ref "$BRANCH"
