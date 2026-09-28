@@ -48,7 +48,7 @@ const year = new Date().getUTCFullYear();
 <link rel="stylesheet" href="/style.css">
 <script is:inline src="/site.js" defer></script>
 {CF_ANALYTICS_TOKEN && (
-  <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CF_ANALYTICS_TOKEN })}></script>
+  <script is:inline type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CF_ANALYTICS_TOKEN })}></script>
 )}
 </head>
 <body>
