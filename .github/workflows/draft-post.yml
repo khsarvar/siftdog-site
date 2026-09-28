@@ -21,7 +21,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write # create the blog-draft label
-  actions: write # start pr-check on the draft branch
+  actions: write # approve (or start) pr-check on the draft branch
 
 concurrency:
   group: draft-post
@@ -94,7 +94,7 @@ jobs:
           url=$(gh pr create --base main --head "$branch" --label blog-draft \
             --title "$(jq -r .prTitle "$DRAFT_OUT")" --body-file "$RUNNER_TEMP/body.md")
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          gh workflow run pr-check.yml --ref "$branch"
+          GITHUB_TOKEN="$GH_TOKEN" node scripts/draft/ensure-check.mjs "$branch"
 
       - name: Tell Slack
         if: steps.pr.outputs.url

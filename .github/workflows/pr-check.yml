@@ -1,8 +1,8 @@
 name: PR check
 
 # Required check for main. Blog drafts can't merge while they have VERIFY markers, run past the
-# length limit, or break the build. The drafting workflows start it with workflow_dispatch
-# because PRs and commits made with GITHUB_TOKEN don't trigger pull_request runs.
+# length limit, or break the build. Runs for bot-made PRs/commits wait for approval; the drafting
+# workflows approve them with scripts/draft/ensure-check.mjs.
 on:
   pull_request:
   workflow_dispatch:
