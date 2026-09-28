@@ -49,12 +49,20 @@ export function prBody({ post, slug, topic, words, verify, consulted }) {
   return lines.join("\n");
 }
 
-async function nearMisses(env, posts, used) {
+async function nearMisses(env, posts, used, { strict = false } = {}) {
   if (!env.GSC_SERVICE_ACCOUNT_JSON || !env.GSC_SITE_URL) {
     console.log("Search Console not configured; skipping near misses.");
     return [];
   }
-  const rows = await fetchRows({ credentialsJson: env.GSC_SERVICE_ACCOUNT_JSON, siteUrl: env.GSC_SITE_URL });
+  let rows;
+  try {
+    rows = await fetchRows({ credentialsJson: env.GSC_SERVICE_ACCOUNT_JSON, siteUrl: env.GSC_SITE_URL });
+  } catch (e) {
+    if (strict) throw e; // --topics-only is the Search Console probe: fail loudly
+    // A drafting run still works from the backlog; the warning shows on the run page.
+    console.log(`::warning::Search Console unavailable, using the backlog: ${e.message}`);
+    return [];
+  }
   const exclude = used.flatMap((m) => m?.queries ?? []);
   const misses = findNearMisses(rows, posts, { minImpressions: Number(env.NEAR_MISS_MIN_IMPRESSIONS || 150), exclude });
   console.log(`Search Console: ${rows.length} query/page rows, ${misses.length} near-miss clusters`);
@@ -66,7 +74,7 @@ async function main(env = process.env) {
   const topicsOnly = process.argv.includes("--topics-only");
   const posts = readPosts();
   const used = (await listDraftPRs({ repo: env.GITHUB_REPOSITORY, token: env.GITHUB_TOKEN })).map((p) => p.meta).filter(Boolean);
-  const topic = pickTopic({ input: env.TOPIC ?? "", nearMisses: await nearMisses(env, posts, used), backlog: readBacklog(), used });
+  const topic = pickTopic({ input: env.TOPIC ?? "", nearMisses: await nearMisses(env, posts, used, { strict: topicsOnly }), backlog: readBacklog(), used });
   console.log("Topic:", JSON.stringify(topic));
   if (topicsOnly) return;
 

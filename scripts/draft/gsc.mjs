@@ -109,6 +109,18 @@ export async function fetchRows({ credentialsJson, siteUrl, today = new Date(), 
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ ...dateRange(today), dimensions: ["query", "page"], rowLimit: 5000 }),
   });
-  if (!resp.ok) throw new Error(`Search Console ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+  if (!resp.ok) {
+    let msg = `Search Console ${resp.status} for ${siteUrl}: ${(await resp.text()).replace(/\s+/g, " ").slice(0, 200)}`;
+    if (resp.status === 403) {
+      // Say which properties this service account can see; usually a URL-prefix vs domain mismatch
+      // or the account not yet added under Settings → Users and permissions.
+      const sites = await fetchImpl("https://searchconsole.googleapis.com/webmasters/v3/sites", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = sites.ok ? ((await sites.json()).siteEntry ?? []).map((e) => `${e.siteUrl} (${e.permissionLevel})`) : [];
+      msg += ` — properties this account can access: ${list.length ? list.join(", ") : "none"}`;
+    }
+    throw new Error(msg);
+  }
   return (await resp.json()).rows ?? [];
 }
