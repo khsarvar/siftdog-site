@@ -91,12 +91,12 @@ export async function listDraftPRs({ repo, token, fetchImpl = fetch }) {
 
 // --- Slack ---
 
-export async function slackPost(text, { token, channel, blocks, fetchImpl = fetch }) {
+export async function slackPost(text, { token, channel, blocks, unfurl = false, fetchImpl = fetch }) {
   if (!token || !channel) return false;
   const resp = await fetchImpl("https://slack.com/api/chat.postMessage", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify({ channel, text, blocks, unfurl_links: false }),
+    body: JSON.stringify({ channel, text, blocks, unfurl_links: unfurl }),
   });
   const data = await resp.json();
   if (!data.ok) throw new Error(`Slack chat.postMessage failed: ${data.error}`);
