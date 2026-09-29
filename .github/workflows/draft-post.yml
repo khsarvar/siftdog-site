@@ -102,10 +102,8 @@ jobs:
           DRAFT_OUT: ${{ runner.temp }}/draft.json
           URL: ${{ steps.pr.outputs.url }}
         run: |
-          title=$(jq -r .title "$DRAFT_OUT")
-          n=$(jq -r .verifyCount "$DRAFT_OUT")
-          MESSAGE=":memo: New blog draft: <$URL|$title> · $(jq -r .words "$DRAFT_OUT") words · $n to verify" \
-            node scripts/draft/notify.mjs
+          PR="${URL##*/}" TITLE=$(jq -r .title "$DRAFT_OUT") WORDS=$(jq -r .words "$DRAFT_OUT") \
+            VERIFY=$(jq -r .verifyCount "$DRAFT_OUT") node scripts/draft/slack-message.mjs
 
       - name: Report failure
         if: failure()
