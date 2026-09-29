@@ -15,7 +15,7 @@ faq:
     a: "Use stdio if Cursor can start Siftdog locally and you already have a reachable SearXNG instance. Use HTTP if you're running the Siftdog and SearXNG stack with Docker Compose."
 ---
 
-**In short:** Add Siftdog to Cursor's MCP configuration to give Agent web search, page extraction, crawling and site mapping. Use a local stdio process or connect to a running Siftdog server; neither needs a search API key.
+**In short:** Add Siftdog to Cursor's MCP configuration for web search, page extraction, crawling and site mapping over local stdio or a running server, without a search API key.
 
 ## What web tools does Cursor get?
 
