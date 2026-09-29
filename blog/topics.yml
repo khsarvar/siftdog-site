@@ -2,8 +2,6 @@
 # Used after Search Console near misses; the first topic without an earlier draft PR is drafted,
 # and the draft PR removes it from this list. `angle` is optional guidance for the writer.
 topics:
-  - topic: "Add web search to Cursor with an MCP server"
-    angle: "Setup steps for Siftdog's MCP server in Cursor, mirroring the Claude Code post."
   - topic: "Web search for local LLMs with Ollama"
     angle: "Fully local stack: Ollama model + self-hosted Siftdog, no API keys."
   - topic: "SearXNG JSON API: how to enable it and handle rate limits"
