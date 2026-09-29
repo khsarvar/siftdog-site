@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { slugify, WORD_LIMIT, wordCount } from "./lib.mjs";
 
-export const DEFAULT_MODEL = "gpt-6-sol";
+export const DEFAULT_MODEL = "gpt-6-luna"; // overridden by the OPENAI_MODEL repo variable
 
 const str = { type: "string" };
 export const POST_SCHEMA = {
