@@ -118,7 +118,8 @@ export async function fetchRows({ credentialsJson, siteUrl, today = new Date(), 
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = sites.ok ? ((await sites.json()).siteEntry ?? []).map((e) => `${e.siteUrl} (${e.permissionLevel})`) : [];
-      msg += ` — properties this account can access: ${list.length ? list.join(", ") : "none"}`;
+      const email = JSON.parse(credentialsJson).client_email;
+      msg += ` — properties ${email} can access: ${list.length ? list.join(", ") : "none"}`;
     }
     throw new Error(msg);
   }
