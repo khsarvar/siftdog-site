@@ -1,0 +1,54 @@
+name: Post draft buttons to Slack
+
+# Re-posts the Slack message with Publish / Revise… / Reject buttons for an open blog-draft PR
+# (e.g. drafts opened before the buttons existed, or a message you deleted).
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Draft PR number"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ inputs.pr }}
+    steps:
+      - name: Find the draft
+        id: pr
+        run: |
+          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::bad PR number"; exit 1; }
+          gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json headRefName,state,labels,url,title > "$RUNNER_TEMP/pr.json"
+          jq -e '.state == "OPEN" and ([.labels[].name] | index("blog-draft")) != null' "$RUNNER_TEMP/pr.json" >/dev/null \
+            || { echo "::error::PR $PR is not an open blog draft"; exit 1; }
+          echo "branch=$(jq -r .headRefName "$RUNNER_TEMP/pr.json")" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Post
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+        run: |
+          file="src/content/posts/${BRANCH#draft/}.md"
+          stats=$(node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            import { parsePost, verifyItems, wordCount } from './scripts/draft/lib.mjs';
+            const { data, body } = parsePost(readFileSync(process.argv[1], 'utf8'));
+            console.log(JSON.stringify({ title: data.title, words: wordCount(body), verify: verifyItems(body).length }));
+          " "$file")
+          URL=$(jq -r .url "$RUNNER_TEMP/pr.json") TITLE=$(jq -r .title <<<"$stats") WORDS=$(jq -r .words <<<"$stats") \
+            VERIFY=$(jq -r .verify <<<"$stats") node scripts/draft/slack-message.mjs
