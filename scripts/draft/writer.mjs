@@ -82,11 +82,12 @@ export async function loadContext({ fetchImpl = fetch } = {}) {
     if (!r.ok) throw new Error(`fetching ${f}: HTTP ${r.status}`);
     return r.text();
   };
-  const [readme, claudeMd] = await Promise.all([get("README.md"), get("CLAUDE.md")]);
+  // README + .env.example (every config variable); CLAUDE.md is local-only and not on GitHub.
+  const [readme, envExample] = await Promise.all([get("README.md"), get(".env.example")]);
   return {
     style: readFileSync("blog/STYLE.md", "utf8"),
     readme,
-    claudeMd,
+    envExample,
     benchmark: stripHtml(readFileSync("src/pages/benchmark.astro", "utf8")),
   };
 }
@@ -95,7 +96,7 @@ export function systemPrompt(ctx) {
   return [
     "You write posts for the Siftdog blog (siftdog.com). Siftdog is an open-source, self-hostable,",
     "Tavily-compatible web search/extract/crawl/map API with an MCP server.",
-    "Follow the style guide exactly. The Siftdog README, CLAUDE.md and benchmark below are the only",
+    "Follow the style guide exactly. The Siftdog README, .env.example and benchmark below are the only",
     "source of truth about Siftdog. Use web search only for facts about other products or the wider",
     "ecosystem (keep it to a handful of searches), and put every such fact in `sources`, citing the",
     "official page on the product's canonical domain (e.g. cursor.com/docs, not mirrors or copies).",
@@ -108,9 +109,9 @@ export function systemPrompt(ctx) {
     "<siftdog_readme>",
     ctx.readme,
     "</siftdog_readme>",
-    "<siftdog_claude_md>",
-    ctx.claudeMd,
-    "</siftdog_claude_md>",
+    "<siftdog_env_example>",
+    ctx.envExample,
+    "</siftdog_env_example>",
     "<benchmark_page>",
     ctx.benchmark,
     "</benchmark_page>",

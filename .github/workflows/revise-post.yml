@@ -4,7 +4,7 @@ name: Revise blog draft
 # - a `/revise <what to change>` PR comment by the repo owner (public repo: nobody else may spend
 #   the API key), or
 # - workflow_dispatch with pr + instruction, sent by the Slack app's "Revise…" button (Cloudflare
-#   Worker in khsarvar/siftdog-ops/slack-app, using a token only the owner holds).
+#   Worker behind the Slack app, using a token only the owner holds).
 # Afterwards it posts a fresh Slack message with Publish / Revise… / Reject buttons.
 on:
   issue_comment:
