@@ -1,10 +1,24 @@
 name: Revise blog draft
 
-# `/revise <what to change>` as a comment on a blog-draft PR rewrites the post on its branch.
-# Only the repo owner can trigger it (public repo: nobody else may spend the API key).
+# Rewrites a blog-draft PR's post on its branch, from either:
+# - a `/revise <what to change>` PR comment by the repo owner (public repo: nobody else may spend
+#   the API key), or
+# - workflow_dispatch with pr + instruction, sent by the Slack app's "Revise…" button (Cloudflare
+#   Worker in khsarvar/siftdog-ops/slack-app, using a token only the owner holds).
+# Afterwards it posts a fresh Slack message with Publish / Revise… / Reject buttons.
 on:
   issue_comment:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Draft PR number"
+        type: string
+        required: true
+      instruction:
+        description: "What to change"
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -12,30 +26,38 @@ permissions:
   actions: write # approve (or start) pr-check on the branch
 
 concurrency:
-  group: revise-${{ github.event.issue.number }}
+  group: revise-${{ github.event.issue.number || inputs.pr }}
 
 jobs:
   revise:
     if: >-
-      github.event.issue.pull_request &&
-      startsWith(github.event.comment.body, '/revise') &&
-      github.event.comment.author_association == 'OWNER' &&
-      contains(github.event.issue.labels.*.name, 'blog-draft')
+      github.event_name == 'workflow_dispatch' || (
+        github.event.issue.pull_request &&
+        startsWith(github.event.comment.body, '/revise') &&
+        github.event.comment.author_association == 'OWNER' &&
+        contains(github.event.issue.labels.*.name, 'blog-draft'))
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      PR: ${{ github.event.issue.number }}
+      PR: ${{ github.event.issue.number || inputs.pr }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
     steps:
       - name: Find the draft branch
         id: pr
         run: |
-          read -r branch cross < <(gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json headRefName,isCrossRepository \
-            --jq '"\(.headRefName) \(.isCrossRepository)"')
-          if [ "$cross" != "false" ] || [[ "$branch" != draft/* ]]; then
-            echo "::error::not a draft branch in this repo: $branch"; exit 1
+          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::bad PR number: $PR"; exit 1; }
+          read -r branch cross state label < <(gh pr view "$PR" -R "$GITHUB_REPOSITORY" \
+            --json headRefName,isCrossRepository,state,labels \
+            --jq '"\(.headRefName) \(.isCrossRepository) \(.state) \([.labels[].name] | index("blog-draft") != null)"')
+          if [ "$cross" != "false" ] || [[ "$branch" != draft/* ]] || [ "$state" != OPEN ] || [ "$label" != true ]; then
+            echo "::error::PR $PR is not an open blog-draft PR from this repo ($branch, $state)"; exit 1
           fi
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "slug=${branch#draft/}" >> "$GITHUB_OUTPUT"
+          {
+            echo "branch=$branch"
+            echo "slug=${branch#draft/}"
+            echo "url=$(gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json url --jq .url)"
+          } >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr.outputs.branch }}
@@ -60,9 +82,11 @@ jobs:
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
           SLUG: ${{ steps.pr.outputs.slug }}
           COMMENT: ${{ github.event.comment.body }}
+          DISPATCH_INSTRUCTION: ${{ inputs.instruction }}
           REVISE_OUT: ${{ runner.temp }}/revise.md
+          REVISE_JSON: ${{ runner.temp }}/revise.json
         run: |
-          export INSTRUCTION="${COMMENT#/revise}"
+          if [ -n "$DISPATCH_INSTRUCTION" ]; then export INSTRUCTION="$DISPATCH_INSTRUCTION"; else export INSTRUCTION="${COMMENT#/revise}"; fi
           node scripts/draft/revise.mjs
       - name: Check
         run: |
@@ -77,13 +101,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "src/content/posts/$SLUG.md"
-          git commit -m "Revise draft per review comment"
+          git commit -m "Revise draft per review"
           git push
           gh pr comment "$PR" --body-file "$RUNNER_TEMP/revise.md"
           GITHUB_TOKEN="$GH_TOKEN" node scripts/draft/ensure-check.mjs "$BRANCH"
+      - name: Tell Slack
+        env:
+          URL: ${{ steps.pr.outputs.url }}
+        run: |
+          j="$RUNNER_TEMP/revise.json"
+          TITLE=$(jq -r .title "$j") WORDS=$(jq -r .words "$j") VERIFY=$(jq -r .verifyCount "$j") \
+            NOTE="Revised: $(jq -r .summary "$j")" node scripts/draft/slack-message.mjs
       - name: Report failure
         if: failure()
         env:
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body "Revision failed: $RUN"
+          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body "Revision failed: $RUN" || true
+          MESSAGE=":warning: Revising <$RUN|draft PR #$PR> failed" node scripts/draft/notify.mjs || true

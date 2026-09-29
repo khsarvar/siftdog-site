@@ -30,6 +30,9 @@ async function main(env = process.env) {
     ...verify.map((v) => `- [ ] ${v}`),
   ].join("\n");
   writeFileSync(env.REVISE_OUT || "revise-result.md", comment);
+  // For the Slack button message the workflow posts afterwards.
+  const summary = { title: post.title, words: wordCount(post.body), verifyCount: verify.length, summary: post.summary };
+  if (env.REVISE_JSON) writeFileSync(env.REVISE_JSON, JSON.stringify(summary));
   console.log(comment);
 }
 

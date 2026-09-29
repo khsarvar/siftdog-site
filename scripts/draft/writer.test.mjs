@@ -98,3 +98,14 @@ test("writePost strips citations from body and FAQ", async () => {
   const { post } = await writePost({ client, instructions: "", input: "", existingSlugs: [] });
   assert.ok(!post.body.includes("cursor.com") && post.faq[0].a === "A.");
 });
+
+test("draft Slack message has the buttons the Worker expects, keyed by PR number", async () => {
+  const { draftMessage } = await import("./slack-message.mjs");
+  const m = draftMessage({ pr: "3", url: "https://github.com/x/pull/3", title: "A <b> & c", words: 500, verifyCount: 2 });
+  const actions = m.blocks.find((b) => b.type === "actions").elements;
+  assert.deepEqual(actions.map((a) => a.action_id), ["publish", "revise", "reject", "open"]);
+  assert.ok(actions.slice(0, 3).every((a) => a.value === "3"));
+  assert.ok(actions[0].confirm && actions[2].confirm);
+  assert.match(m.blocks[0].text.text, /A &lt;b&gt; &amp; c/);
+  assert.match(m.blocks[0].text.text, /2 to verify/);
+});
