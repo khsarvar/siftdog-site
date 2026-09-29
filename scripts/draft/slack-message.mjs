@@ -1,5 +1,5 @@
 // Slack message for a blog draft with Publish / Revise… / Reject buttons. Clicks go to the Slack
-// app's interactivity endpoint (Cloudflare Worker in khsarvar/siftdog-ops/slack-app), which reads
+// app's interactivity endpoint (a Cloudflare Worker, maintained privately), which reads
 // the PR number from the button value. Keep action_ids in sync with that Worker.
 //   node scripts/draft/slack-message.mjs   (env: PR, URL, TITLE, WORDS, VERIFY, NOTE, SLACK_*)
 import { slackPost } from "./lib.mjs";

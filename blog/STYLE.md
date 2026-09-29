@@ -14,7 +14,7 @@ Used as instructions by the drafting workflow and as the checklist for human rev
 
 ## Facts
 - Commands, flags, env vars, endpoints and tool names must appear in the Siftdog README or
-  CLAUDE.md provided. Never invent terminal output, benchmark numbers or features.
+  `.env.example` provided. Never invent terminal output, benchmark numbers or features.
 - Numbers about Siftdog come only from the benchmark page provided.
 - Facts about other products (prices, limits, features) need a source URL found with web search;
   list every such claim in `sources`.
