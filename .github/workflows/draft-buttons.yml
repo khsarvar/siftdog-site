@@ -29,9 +29,8 @@ jobs:
           jq -e '.state == "OPEN" and ([.labels[].name] | index("blog-draft")) != null' "$RUNNER_TEMP/pr.json" >/dev/null \
             || { echo "::error::PR $PR is not an open blog draft"; exit 1; }
           echo "branch=$(jq -r .headRefName "$RUNNER_TEMP/pr.json")" >> "$GITHUB_OUTPUT"
+      # Scripts come from main (the draft branch may predate them); only the post is read from the branch.
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.pr.outputs.branch }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -43,7 +42,9 @@ jobs:
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           BRANCH: ${{ steps.pr.outputs.branch }}
         run: |
-          file="src/content/posts/${BRANCH#draft/}.md"
+          git fetch -q origin "$BRANCH"
+          file="$RUNNER_TEMP/post.md"
+          git show "FETCH_HEAD:src/content/posts/${BRANCH#draft/}.md" > "$file"
           stats=$(node --input-type=module -e "
             import { readFileSync } from 'node:fs';
             import { parsePost, verifyItems, wordCount } from './scripts/draft/lib.mjs';
