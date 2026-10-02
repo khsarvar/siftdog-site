@@ -4,8 +4,6 @@
 topics:
   - topic: "Web search for local LLMs with Ollama"
     angle: "Fully local stack: Ollama model + self-hosted Siftdog, no API keys."
-  - topic: "SearXNG JSON API: how to enable it and handle rate limits"
-    angle: "Practical SearXNG setup notes: JSON format, engines, upstream rate limits and what Siftdog does about them."
   - topic: "Turn web pages into clean text for RAG"
     angle: "Using /extract to get main content without boilerplate; limits (no JavaScript rendering)."
   - topic: "Crawl a documentation site into Markdown"
