@@ -2,8 +2,8 @@
 # Used after Search Console near misses; the first topic without an earlier draft PR is drafted,
 # and the draft PR removes it from this list. `angle` is optional guidance for the writer.
 topics:
-  - topic: "SearXNG JSON API: how to enable it and handle rate limits"
-    angle: "Practical SearXNG setup notes: JSON format, engines, upstream rate limits and what Siftdog does about them."
+  - topic: "Web search for local LLMs with Ollama"
+    angle: "Fully local stack: Ollama model + self-hosted Siftdog, no API keys."
   - topic: "Turn web pages into clean text for RAG"
     angle: "Using /extract to get main content without boilerplate; limits (no JavaScript rendering)."
   - topic: "Crawl a documentation site into Markdown"
