@@ -1,6 +1,7 @@
 # Blog topic backlog for the drafting workflow (.github/workflows/draft-post.yml).
-# Used after Search Console near misses; the first topic without an earlier draft PR is drafted,
-# and the draft PR removes it from this list. `angle` is optional guidance for the writer.
+# Used after Search Console near misses; the first topic without an earlier draft PR (open, merged
+# or closed) is drafted. Draft PRs don't edit this file, so parallel drafts can't conflict on it.
+# `angle` is optional guidance for the writer.
 topics:
   - topic: "Web search for local LLMs with Ollama"
     angle: "Fully local stack: Ollama model + self-hosted Siftdog, no API keys."

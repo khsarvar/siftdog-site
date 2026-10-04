@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test } from "node:test";
 import { aggregate, covers, dateRange, findNearMisses } from "./gsc.mjs";
-import { pickTopic, readBacklog, removeFromBacklog } from "./topics.mjs";
+import { pickTopic, readBacklog } from "./topics.mjs";
 
 const post = (slug, title, description = "") => ({ slug, data: { title, description } });
 const POSTS = [
@@ -56,14 +53,6 @@ test("topic priority: manual > near miss > backlog > model, skipping used ones",
   const used = [{ queries: ["searxng json api"] }, { topic: "crawl a docs site" }];
   assert.deepEqual(pickTopic({ nearMisses, backlog, used }), { source: "backlog", topic: "Web search for Ollama", angle: "local" });
   assert.deepEqual(pickTopic({ nearMisses, backlog, used: [...used, { slug: "web-search-for-ollama" }] }), { source: "model" });
-});
-
-test("removeFromBacklog keeps comments and other topics", () => {
-  const file = join(mkdtempSync(join(tmpdir(), "topics-")), "topics.yml");
-  writeFileSync(file, '# keep me\ntopics:\n  - topic: "A"\n    angle: "x"\n  - "B"\n');
-  removeFromBacklog("A", file);
-  assert.match(readFileSync(file, "utf8"), /# keep me/);
-  assert.deepEqual(readBacklog(file), [{ topic: "B" }]);
 });
 
 test("the repo backlog parses", () => {

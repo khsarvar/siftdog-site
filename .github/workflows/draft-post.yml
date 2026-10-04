@@ -87,7 +87,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          git add src/content/posts blog/topics.yml
+          git add src/content/posts
           git commit -m "$(jq -r .prTitle "$DRAFT_OUT")"
           git push -u origin "$branch"
           gh label create blog-draft --color FF7A45 --description "AI-drafted blog post awaiting review" --force
