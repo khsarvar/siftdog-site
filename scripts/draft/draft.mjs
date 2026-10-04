@@ -1,7 +1,7 @@
 // Draft the next blog post (run by .github/workflows/draft-post.yml).
 //
-//   node scripts/draft/draft.mjs                 pick a topic, write src/content/posts/<slug>.md,
-//                                                update blog/topics.yml, write the PR details JSON
+//   node scripts/draft/draft.mjs                 pick a topic, write src/content/posts/<slug>.md
+//                                                and the PR details JSON
 //   node scripts/draft/draft.mjs --topics-only   print Search Console near misses and the topic
 //                                                that would be picked; no model call, no writes
 //
@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import OpenAI from "openai";
 import { fetchRows, findNearMisses } from "./gsc.mjs";
 import { draftMeta, listDraftPRs, POSTS_DIR, readPosts, renderPost, verifyItems, wordCount } from "./lib.mjs";
-import { pickTopic, readBacklog, removeFromBacklog } from "./topics.mjs";
+import { pickTopic, readBacklog } from "./topics.mjs";
 import { DEFAULT_MODEL, draftPrompt, loadContext, systemPrompt, writePost } from "./writer.mjs";
 
 export function prBody({ post, slug, topic, words, verify, consulted }) {
@@ -90,7 +90,6 @@ async function main(env = process.env) {
 
   const today = new Date().toISOString().slice(0, 10);
   writeFileSync(`${POSTS_DIR}/${slug}.md`, renderPost({ ...post, pubDate: today }));
-  if (topic.source === "backlog") removeFromBacklog(topic.topic);
 
   const verify = verifyItems(post.body);
   const words = wordCount(post.body);
