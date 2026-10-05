@@ -58,10 +58,10 @@ jobs:
             echo "slug=${branch#draft/}"
             echo "url=$(gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json url --jq .url)"
           } >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.branch }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           path: .main
@@ -71,7 +71,7 @@ jobs:
           cp .main/blog/STYLE.md blog/STYLE.md
           cp .main/package.json .main/package-lock.json .
           rm -rf .main
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
