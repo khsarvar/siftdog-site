@@ -30,8 +30,8 @@ jobs:
             || { echo "::error::PR $PR is not an open blog draft"; exit 1; }
           echo "branch=$(jq -r .headRefName "$RUNNER_TEMP/pr.json")" >> "$GITHUB_OUTPUT"
       # Scripts come from main (the draft branch may predate them); only the post is read from the branch.
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
