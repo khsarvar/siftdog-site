@@ -3,6 +3,8 @@
 # or closed) is drafted. Draft PRs don't edit this file, so parallel drafts can't conflict on it.
 # `angle` is optional guidance for the writer.
 topics:
+  - topic: "Firecrawl vs Tavily"
+    angle: "Search Console query \"firecrawl vs tavily\" (position ~18). What each is built for (crawl/scrape vs search API), sourced pricing and limits, where self-hosted Siftdog fits; link the Siftdog vs Firecrawl vs CRW post instead of repeating it."
   - topic: "Web search for local LLMs with Ollama"
     angle: "Fully local stack: Ollama model + self-hosted Siftdog, no API keys."
   - topic: "Tavily API pricing vs self-hosting"
