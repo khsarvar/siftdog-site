@@ -16,12 +16,13 @@ const tools = [
 ];
 
 // Exercise the real MCP SDK over its HTTP boundary, without network or credentials.
-function mcpFixture({ toolResult, hang, status, advertisedTools = tools } = {}) {
+function mcpFixture({ toolResult, hang, status, advertisedTools = tools, onRequest } = {}) {
   const requests = [];
   const fetchImpl = async (url, init) => {
     const message = init.body ? JSON.parse(init.body) : null;
     const headers = new Headers(init.headers);
     requests.push({ url: String(url), headers, message, signal: init.signal });
+    onRequest?.(message);
     assert.equal(String(url), PARALLEL_URL);
     assert.equal(headers.get("user-agent"), SEARCH_USER_AGENT);
     assert.equal(headers.has("authorization"), false);
@@ -168,11 +169,12 @@ test("setup and tool calls time out; cancellation aborts HTTP before consuming a
     await assert.rejects(writePost(options(client, fixture, { searchTimeoutMs: 30 })), /timeout|timed out/i);
     assert.ok(fixture.requests.filter((r) => r.message?.method === hang).every((r) => r.signal.aborted));
   }
-  const fixture = mcpFixture({ hang: "tools/call" });
   const controller = new AbortController();
+  const fixture = mcpFixture({ hang: "tools/call", onRequest: (message) => {
+    if (message?.method === "tools/call") controller.abort(new Error("cancelled by owner"));
+  } });
   const client = scriptedClient([{ output: [call("parallel_web_fetch", { urls: ["https://example.com/docs"] })] }, final()]);
   const pending = writePost(options(client, fixture, { signal: controller.signal }));
-  setTimeout(() => controller.abort(new Error("cancelled by owner")), 30);
   await assert.rejects(pending, /cancelled by owner/);
   assert.ok(fixture.requests.some((r) => r.message?.method === "tools/call" && r.signal.aborted));
   assert.equal(client.requests.length, 1);
