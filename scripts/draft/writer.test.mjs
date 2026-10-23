@@ -54,6 +54,7 @@ test("writePost retries once with the problems, then returns the valid post", as
   const calls = [];
   const replies = [{ ...good, body: "no opener" }, good];
   const client = {
+    apiKey: "configured-test-key",
     responses: {
       create: async (req) => {
         calls.push(req);
@@ -74,7 +75,7 @@ test("writePost retries once with the problems, then returns the valid post", as
 });
 
 test("writePost gives up after two invalid answers", async () => {
-  const client = { responses: { create: async () => ({ output_text: JSON.stringify({ ...good, body: "x" }), output: [] }) } };
+  const client = { apiKey: "configured-test-key", responses: { create: async () => ({ output_text: JSON.stringify({ ...good, body: "x" }), output: [] }) } };
   await assert.rejects(writePost({ client, instructions: "", input: "", existingSlugs: [] }), /still invalid/);
 });
 
@@ -94,7 +95,7 @@ test("stripCitations removes web-search citation links but keeps normal links", 
 
 test("writePost strips citations from body and FAQ", async () => {
   const cited = { ...good, body: good.body + " ([cursor.com](https://cursor.com/docs))", faq: [{ q: "Q?", a: "A. ([x.io](https://x.io/a))" }] };
-  const client = { responses: { create: async () => ({ output_text: JSON.stringify(cited), output: [] }) } };
+  const client = { apiKey: "configured-test-key", responses: { create: async () => ({ output_text: JSON.stringify(cited), output: [] }) } };
   const { post } = await writePost({ client, instructions: "", input: "", existingSlugs: [] });
   assert.ok(!post.body.includes("cursor.com") && post.faq[0].a === "A.");
 });

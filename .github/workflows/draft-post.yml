@@ -58,6 +58,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          BLOG_SEARCH_PROVIDER: ${{ vars.BLOG_SEARCH_PROVIDER }}
           GITHUB_TOKEN: ${{ github.token }}
           GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
           GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
