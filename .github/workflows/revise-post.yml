@@ -80,6 +80,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          BLOG_SEARCH_PROVIDER: ${{ vars.BLOG_SEARCH_PROVIDER }}
           SLUG: ${{ steps.pr.outputs.slug }}
           COMMENT: ${{ github.event.comment.body }}
           DISPATCH_INSTRUCTION: ${{ inputs.instruction }}
