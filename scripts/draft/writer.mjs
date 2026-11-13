@@ -1,6 +1,7 @@
-// The OpenAI call that writes or revises a post: Responses API + web search + Structured Outputs.
+// The OpenAI call that writes or revises a post: Responses API + search + Structured Outputs.
 import { readFileSync } from "node:fs";
 import { slugify, WORD_LIMIT, wordCount } from "./lib.mjs";
+import { connectParallel, resolveSearchProvider, sourceUrls } from "./search.mjs";
 
 export const DEFAULT_MODEL = "gpt-6-luna"; // overridden by the OPENAI_MODEL repo variable
 
@@ -167,27 +168,54 @@ function consultedUrls(response) {
  * Ask the model for a post; validate it and retry once with the problems listed.
  * Returns { post, slug, consulted }.
  */
-export async function writePost({ client, model = DEFAULT_MODEL, instructions, input, existingSlugs, fixedSlug }) {
+export async function writePost({ client, model = DEFAULT_MODEL, instructions, input, existingSlugs, fixedSlug,
+  searchProvider, env = process.env, signal, searchTimeoutMs = 30_000, fetchImpl = fetch }) {
+  const provider = resolveSearchProvider({ provider: searchProvider, env, client });
+  const search = provider === "parallel" ? await connectParallel({ model, signal, timeoutMs: searchTimeoutMs, fetchImpl }) : null;
+  const tools = search?.tools ?? (provider === "openai" ? [{ type: "web_search", search_context_size: "medium" }] : []);
+  const consulted = new Set();
+  let toolCalls = 0;
   let prompt = input;
   let lastProblems = [];
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const response = await client.responses.create({
-      model,
-      instructions,
-      input: prompt,
-      reasoning: { effort: "high" },
-      tools: [{ type: "web_search", search_context_size: "medium" }],
-      include: ["web_search_call.action.sources"],
-      text: { format: { type: "json_schema", name: "blog_post", strict: true, schema: POST_SCHEMA } },
-      store: false,
-    });
-    const post = JSON.parse(response.output_text);
-    post.body = stripCitations(post.body);
-    for (const f of post.faq) f.a = stripCitations(f.a);
-    const { slug, problems } = validatePost(post, { existingSlugs, fixedSlug });
-    if (!problems.length) return { post, slug, consulted: consultedUrls(response) };
-    lastProblems = problems;
-    prompt = `${input}\n\nYour previous attempt had these problems; fix them:\n- ${problems.join("\n- ")}`;
+  try {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const history = [{ role: "user", content: prompt }];
+      let response;
+      for (;;) {
+        signal?.throwIfAborted();
+        response = await client.responses.create({
+          model,
+          instructions,
+          input: search ? history : prompt,
+          reasoning: { effort: "high" },
+          tools,
+          include: provider === "openai" ? ["web_search_call.action.sources"] : ["reasoning.encrypted_content"],
+          text: { format: { type: "json_schema", name: "blog_post", strict: true, schema: POST_SCHEMA } },
+          store: false,
+        }, { signal });
+        for (const url of consultedUrls(response)) consulted.add(url);
+        const calls = (response.output ?? []).filter((item) => item.type === "function_call");
+        if (!calls.length) break;
+        if (!search) throw new Error("Search function calls are disabled for this provider");
+        if (toolCalls + calls.length > 8) throw new Error("Blog research exceeded eight search/fetch calls");
+        history.push(...response.output);
+        for (const call of calls) {
+          const result = await search.call(call.name, JSON.parse(call.arguments));
+          toolCalls++;
+          for (const url of sourceUrls(result)) consulted.add(url);
+          history.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result) });
+        }
+      }
+      const post = JSON.parse(response.output_text);
+      post.body = stripCitations(post.body);
+      for (const f of post.faq) f.a = stripCitations(f.a);
+      const { slug, problems } = validatePost(post, { existingSlugs, fixedSlug });
+      if (!problems.length) return { post, slug, consulted: [...consulted] };
+      lastProblems = problems;
+      prompt = `${input}\n\nYour previous attempt had these problems; fix them:\n- ${problems.join("\n- ")}`;
+    }
+    throw new Error(`model output still invalid after retry: ${lastProblems.join("; ")}`);
+  } finally {
+    await search?.close();
   }
-  throw new Error(`model output still invalid after retry: ${lastProblems.join("; ")}`);
 }

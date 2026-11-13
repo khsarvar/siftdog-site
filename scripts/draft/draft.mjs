@@ -83,6 +83,7 @@ async function main(env = process.env) {
   const { post, slug, consulted } = await writePost({
     client: new OpenAI({ apiKey: env.OPENAI_API_KEY }),
     model: env.OPENAI_MODEL || DEFAULT_MODEL,
+    env,
     instructions: systemPrompt(ctx),
     input: draftPrompt({ topic, posts, example }),
     existingSlugs: [...posts.map((p) => p.slug), ...used.map((m) => m.slug)],
