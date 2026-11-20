@@ -15,6 +15,7 @@ async function main(env = process.env) {
   const { post } = await writePost({
     client: new OpenAI({ apiKey: env.OPENAI_API_KEY }),
     model: env.OPENAI_MODEL || DEFAULT_MODEL,
+    env,
     instructions: systemPrompt(await loadContext()),
     input: revisePrompt({ current, instruction: env.INSTRUCTION }),
     fixedSlug: slug,
